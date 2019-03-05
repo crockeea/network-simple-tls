@@ -41,6 +41,7 @@ module Network.Simple.TCP.TLS (
 
   -- * Utils
   , recv
+  , recvAuth
   , send
 
   -- * Low level support
@@ -539,9 +540,18 @@ recv ctx = liftIO $ do
     E.handle (\T.Error_EOF -> return Nothing)
              (do bs <- T.recvData ctx
                  if B.null bs
-                    then return Nothing -- I think this never happens
-                    else return (Just bs))
+                   then return Nothing -- I think this never happens
+                   else return (Just bs))
 {-# INLINABLE recv #-}
+
+recvAuth :: MonadIO m => Context -> m (Maybe (X.CertificateChain, B.ByteString))
+recvAuth ctx = liftIO $ do
+    E.handle (\T.Error_EOF -> return Nothing)
+             (do (cc,bs) <- T.recvAuthData ctx
+                 if B.null bs
+                   then return Nothing -- I think this never happens
+                   else return $ Just (cc,bs))
+{-# INLINABLE recvAuth #-}
 
 -- | Encrypts the given strict 'B.ByteString' and sends it through the
 -- 'Context'.
